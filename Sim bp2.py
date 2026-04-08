@@ -4,42 +4,48 @@ from matplotlib.animation import FuncAnimation
 import numpy as np
 from random import uniform
 
+#
 #####################################################################################
 #                               VARIABLES
 
-partnr = 300     # Count of particles
+partnr = 150     # Count of particles
 fps = 60
-r = 0.2         # Radius of particle in meter
+r = 0.4         # Radius of particle in meter
 m = 70          # Mass in kg
 sl = 2          # Multiplier on the random start speed
 strength = 10    # Multiplier on the force between particles
 wallf = 1.0     # Walls repellant force
-cutoff       = 5
-long_strength = 0.5
-long_cutoff  = 10
+cutoff       = 5  #threshold of proximity
+long_strength = 0.5 #Multiplier on the force between distant particles
+long_cutoff  = 10 #threshold of proximity of distant particles
 
         # Class "Variables" from CSV file for easier run
 def rgb(r, g, b):
     return (r/255, g/255, b/255)
 
 #####################################################################################
+#                              PARTICLE
 
 class Particle:
     def __init__(self, x, y, vx, vy, r, m, color=None):
-        self.x = x
-        self.y = y
-        self.vx = vx
-        self.vy = vy
-        self.radius = r
-        self.mass = m
+        self.x = x #position
+        self.y = y #position
+        self.vx = vx #velocity of x
+        self.vy = vy #velocity of y
+        self.radius = r #radius of individual particles
+        self.mass = m #mass of particle
         self.color = color if color else rgb(107, 255, 149)
+        # parr = np.array([])
 
     def f_repulse(self, other):   
-        dx   = self.x - other.x
+        
+        #finding the distance between particles
+        dx   = self.x - other.x 
         dy   = self.y - other.y
         dist = (dx*dx + dy*dy) ** 0.5 + 0.001
         ux, uy = dx / dist, dy / dist
-
+        
+        # applying the cutoff to prioritise interactions
         if dist < cutoff:
             force = strength * (cutoff - dist)
         elif dist < long_cutoff:
@@ -48,8 +54,10 @@ class Particle:
             return 0, 0
 
         return force * ux, force * uy
+        
 #########################################################
 #                           ROOM
+
 class Room:
     def __init__(self, x, y, w, h):
         """x, y = bottom-left corner, w = width, h = height"""
@@ -64,6 +72,7 @@ class Room:
                 self.y + radius < py < self.y + self.h - radius)
 
     def draw(self, ax):
+        #defining the bounds of the room
         rect = patches.Rectangle(
             (self.x, self.y), self.w, self.h,
             linewidth=2, edgecolor='black', facecolor='lightyellow', zorder=1
@@ -72,9 +81,9 @@ class Room:
 
     def bounce(self, p):
         """Bounce particle off room walls"""
-        if p.x - p.radius < self.x:
-            p.x = self.x + p.radius
-            p.vx = abs(p.vx)
+        if p.x - p.radius < self.x: #If particle in wall
+            p.x = self.x + p.radius #Define where particle should be, when not in all
+            p.vx = abs(p.vx) #Make particle go out of wall
         if p.x + p.radius > self.x + self.w:
             p.x = self.x + self.w - p.radius
             p.vx = -abs(p.vx)
@@ -93,6 +102,7 @@ class Wall:
         self.corners = [(x1,y1), (x2,y2), (x3,y3), (x4,y4)]
 
     def draw(self, ax):
+        #drawing the walls
         poly = patches.Polygon(
             self.corners,
             closed=True, edgecolor='black', facecolor='gray',zorder=3
@@ -101,13 +111,14 @@ class Wall:
 
     def bounce(self, p):
         for i in range(len(self.corners)):
+            #breaking up variables for each corner position
             x1, y1 = self.corners[i]
             x2, y2 = self.corners[(i + 1) % len(self.corners)]
 
-            # Edge vector
+            # Edge vectors -- using Pythagorean Theorem to find x,y of each edge wall
             ex = x2 - x1
             ey = y2 - y1
-            edge_len = (ex**2 + ey**2) ** 0.5
+            edge_len = (ex**2 + ey**2) ** 0.5 #Pytpytmands formel (Pythagoras)
 
             # Skip very short edges (end caps)
             if edge_len < 0.3:
@@ -130,7 +141,7 @@ class Wall:
             if along < 0 or along > edge_len:
                 continue  # outside the edge length, skip
 
-            # Signed distance from particle to edge line
+            # "Actual" distance from wall in either direction
             dist = dx * nx + dy * ny
 
             # Only act if particle is within radius of the wall
@@ -140,7 +151,8 @@ class Wall:
                 if (dist > 0 and dot < 0) or (dist < 0 and dot > 0):
                     p.vx -= 2 * dot * nx
                     p.vy -= 2 * dot * ny
-
+# Conversation of energy and "repel" on the walls aswell. phi = 1/2 k (x-x0)^2 for all around.
+# Look into gradient 
                 # Push out based on which side the particle is on
                 if dist >= 0:
                     p.x = x1 + along * tx + nx * p.radius
@@ -163,7 +175,7 @@ ax.set_ylim(0, 10)
 ax.set_aspect('equal')
 ax.axis('off')
 
-# --- Define your floor plan here ---
+# --- Define your floor plan dimensions here ---
 room = Room(0.5, 0.5, 9, 9)
 
 inner_walls = [
@@ -177,12 +189,13 @@ for wall in inner_walls:
     wall.draw(ax)
 
 # Particle spawn
-dt = 1 / fps
+dt = 1 / fps #frame time
 particles = []
 circles = []
 
 for _ in range(partnr):
     while True:
+        # finding random positions
         px = uniform(room.x + r, room.x + room.w - r)
         py = uniform(room.y + r, room.y + room.h - r)
 
@@ -198,7 +211,7 @@ for _ in range(partnr):
         if not in_wall:
             break
 
-    vx = uniform(-sl, sl)
+    vx = uniform(-sl, sl) # sl - multiplier of the random start speed
     vy = uniform(-sl, sl)
     p = Particle(px, py, vx, vy, r, m)
     particles.append(p)
@@ -211,6 +224,7 @@ for _ in range(partnr):
 #####################################################################################
 #                               GRID
 
+
 grid_spacing = 1      # size of each cell in meters
 grid_cols = int(9 / grid_spacing)   # number of columns
 grid_rows = int(9 / grid_spacing)   # number of rows
@@ -218,11 +232,13 @@ grid_rows = int(9 / grid_spacing)   # number of rows
 # 2D array to store data — e.g. particle count per cell
 grid_data = np.zeros((grid_rows, grid_cols))
 
+
+
 def get_grid_cell(px, py):
-    """Convert particle x,y position to grid cell index"""
+    # Convert particle x,y position to grid cell index
     col = int((px - room.x) / grid_spacing)
     row = int((py - room.y) / grid_spacing)
-    # Clamp to grid bounds
+    # Binding grid to room space
     col = max(0, min(col, grid_cols - 1))
     row = max(0, min(row, grid_rows - 1))
 
@@ -230,17 +246,17 @@ def get_grid_cell(px, py):
     return row, col
 
 def update_grid():
-    """Count how many particles are in each cell"""
+    # Count how many particles are in each cell
     grid_data[:] = 0    # reset
     for p in particles:
         row, col = get_grid_cell(p.x, p.y)
         grid_data[row, col] += 1
 
 
-        #^^ Only keeping track of total count and not neighborhoods
+            #^^ Only keeping track of total count and not neighborhoods
 
 def draw_grid(ax):
-    """Draw the grid lines on the plot"""
+    # Draw the grid lines on the plot
     for i in range(grid_cols + 1):
         x = room.x + i * grid_spacing
         ax.plot([x, x], [room.y, room.y + room.h], color='lightblue', linewidth=0.5, zorder=2)
@@ -248,12 +264,12 @@ def draw_grid(ax):
         y = room.y + j * grid_spacing
         ax.plot([room.x, room.x + room.w], [y, y], color='lightblue', linewidth=0.5, zorder=2)
 
-draw_grid(ax)
 
 #####################################################################################
 #                               ANIMATION
 
-def update(frame):
+
+def recaller():
     for i in range(len(particles)):
         for j in range(i + 1, len(particles)):  # i+1 avoids double counting
             p1 = particles[i]
@@ -268,7 +284,7 @@ def update(frame):
             p2.vx -= (fx / p2.mass) * dt
             p2.vy -= (fy / p2.mass) * dt
     
-    for i, p in enumerate(particles):
+    for _, p in enumerate(particles):
         # Move
         p.x += p.vx * dt
         p.y += p.vy * dt
@@ -279,19 +295,23 @@ def update(frame):
         # Inner wall bounce
         for wall in inner_walls:
             wall.bounce(p)
-
-        # Update the drawn circle position
-        circles[i].center = (p.x, p.y)
-
     update_grid()
-
+    
+    
+def update(frame):
+    recaller()
+    for i, p in enumerate(particles):
+        circles[i].center = (p.x, p.y)
+        # Update the drawn circle position 
+    draw_grid(ax)
     return circles
 
 animation = FuncAnimation(
     fig=fig,
     func=update,
     interval=1000 // fps,
-    blit=True
+    blit=True,
+    cache_frame_data=False
 )
 
 plt.tight_layout()
