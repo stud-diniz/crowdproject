@@ -10,7 +10,7 @@ from random import uniform
 
 partnr = 150     # Count of particles
 fps = 60
-r = 0.4         # Radius of particle in meter
+r = 0.2         # Radius of particle in meter
 m = 70          # Mass in kg
 sl = 2          # Multiplier on the random start speed
 strength = 10    # Multiplier on the force between particles
@@ -27,7 +27,7 @@ def rgb(r, g, b):
 #                              PARTICLE
 
 class Particle:
-    def __init__(self, x, y, vx, vy, r, m, color=None):
+    def __init__(self, x, y, vx, vy, r, m, color=None, edgecolor=None):
         self.x = x #position
         self.y = y #position
         self.vx = vx #velocity of x
@@ -35,6 +35,7 @@ class Particle:
         self.radius = r #radius of individual particles
         self.mass = m #mass of particle
         self.color = color if color else rgb(107, 255, 149)
+        self.edgecolor = edgecolor if edgecolor else rgb(0,0,0)
         # parr = np.array([])
 
     def f_repulse(self, other):   
@@ -216,7 +217,7 @@ for _ in range(partnr):
     p = Particle(px, py, vx, vy, r, m)
     particles.append(p)
 
-    circle = patches.Circle((px, py), r, color=p.color, zorder=4)
+    circle = patches.Circle((px, py), r, facecolor=p.color, edgecolor="black", zorder=4)
     ax.add_patch(circle)
     circles.append(circle)
 
