@@ -3,6 +3,8 @@ import matplotlib.patches as patches
 from matplotlib.animation import FuncAnimation
 import numpy as np
 import scipy as sp
+from scipy.spatial import cKDTree
+import time
 from random import uniform
 
 #
@@ -58,10 +60,6 @@ class Particle:
 
         return force * ux, force * uy
     
-    def searcher(self, other):
-            for i in range(partnr):
-                bell = sp.spatial.count_neighbors(self.radius + h) #the bell in 2D
-                return bell
         
 #########################################################
 #                           ROOM
@@ -196,6 +194,7 @@ room.draw(ax)
 for wall in inner_walls:
     wall.draw(ax)
 
+
 # Particle spawn
 dt = 1 / fps #frame time
 particles = []
@@ -263,7 +262,7 @@ def update_grid():
 
             #^^ Only keeping track of total count and not neighborhoods
 
-def draw_grid(ax):
+def draw_grid():
     # Draw the grid lines on the plot
     for i in range(grid_cols + 1):
         x = room.x + i * grid_spacing
@@ -278,8 +277,13 @@ def draw_grid(ax):
 
 #Scale down the animation size. physical size
 def recaller():
-    for i in range(len(particles)):
-        for j in range(i + 1, len(particles)):  # i+1 avoids double counting
+    # Build a KDTree from all current particle positions
+    positions = np.array([[p.x, p.y] for p in particles])
+    tree = cKDTree(positions)
+
+    # Query all pairs within search radius h
+    pairs = tree.query_pairs(r=h)
+    for i, j in pairs:
             p1 = particles[i]
             p2 = particles[j]
 
@@ -304,15 +308,20 @@ def recaller():
         for wall in inner_walls:
             wall.bounce(p)
     update_grid()
-    
+
+frame_count = 0
     
 def update(frame):
+    global frame_count
+    frame_count += 1
     recaller()
     for i, p in enumerate(particles):
         circles[i].center = (p.x, p.y)
         # Update the drawn circle position 
-    draw_grid(ax)
     return circles
+
+start_time = time.time()
+draw_grid()
 
 animation = FuncAnimation(
     fig=fig,
@@ -323,13 +332,19 @@ animation = FuncAnimation(
 )
 
 plt.tight_layout()
-plt.show()
+plt.show()  # blocks here until the window is closed
+
+end_time = time.time()
+elapsed = end_time - start_time
+
 
 print(grid_data)            # raw array
 print(grid_data.shape)      # (18, 18) for 0.5 spacing in a 9x9 room
 
-# e.g. get the cell with the most particles
-print(np.argmax(grid_data))
 
-# e.g. get total particles counted
-print(grid_data.sum())
+print(f"\n--- Simulation Summary ---")
+print(f"Runtime:          {elapsed:.2f}s")          # Name speaks for itself
+print(f"Frames rendered:  {frame_count}")          # Absolute Fps count
+print(f"Total particles:  {int(grid_data.sum())}")  # Incase we forget the particle sum
+print(f"Peak cell count:  {int(grid_data.max())}")  # Which cell has the highest amount?
+print(f"Peak cell index:  {np.unravel_index(np.argmax(grid_data), grid_data.shape)}") #Or this one does?
