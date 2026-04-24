@@ -26,6 +26,8 @@ goal_x = 45.5   # center of the exit gap
 goal_y = 91.0
 v_pref = 1.4    # preferred speed in m/s (matches paper)
 tau   = 0.5     # relaxation time — how quickly particle steers toward goal. "Smoothing" force so they are gentle
+rho0  = 1.0    # rest density (P/m²) — target crowd density
+k_sph = 1.0    # gas constant — stiffness of pressure response
 
         # Class "Variables" from CSV file for easier run
 def rgb(r, g, b):
@@ -287,25 +289,10 @@ def recaller():
     # Build neighbor lists — reusable for density, pressure, acceleration
     neighbor_lists = tree.query_ball_point(positions, r=h)
 
-# Attaching the pairs based on the "bell" kernel from SPH
+    # Attaching the pairs based on the "bell" kernel from SPH
     for i, p in enumerate(particles):
         p.neighbors = neighbor_lists[i]
-    # Query all pairs within search radius h
-    pairs = tree.query_pairs(r=h)
 
-    for i, p1 in enumerate(particles):
-        for j in p1.neighbors:
-            if j <= i:  # avoid double counting
-                continue
-            p2 = particles[j]
-            fx, fy = p1.f_repulse(p2)
-            # ^^ Get only "related" particles like neighborhoods
-
-            # Applies force to both particles in opposite directions
-            p1.vx += (fx / p1.mass) * dt
-            p1.vy += (fy / p1.mass) * dt
-            p2.vx -= (fx / p2.mass) * dt
-            p2.vy -= (fy / p2.mass) * dt
     # Task 3 — preferred velocity steering
     for p in particles:
         dx = goal_x - p.x
@@ -320,6 +307,41 @@ def recaller():
         p.vx += (vpx - p.vx) / tau * dt
         p.vy += (vpy - p.vy) / tau * dt
 
+    # Task 2 — contact forces via neighbor loop
+    for i, p1 in enumerate(particles):
+        for j in p1.neighbors:
+            if j <= i:  # avoid double counting
+                continue
+            p2 = particles[j]
+            fx, fy = p1.f_repulse(p2)
+            # ^^ Get only "related" particles like neighborhoods
+
+            # Applies force to both particles in opposite directions
+            p1.vx += (fx / p1.mass) * dt
+            p1.vy += (fy / p1.mass) * dt
+            p2.vx -= (fx / p2.mass) * dt
+            p2.vy -= (fy / p2.mass) * dt
+
+    # Task 4 — SPH density and pressure
+    for i, p in enumerate(particles):
+        rho = 0.0
+        for j in p.neighbors:
+            pj = particles[j]
+            dx = p.x - pj.x
+            dy = p.y - pj.y
+            dist = (dx**2 + dy**2) ** 0.5
+
+            # Poly6 smoothing kernel
+            if dist < h:
+                w = (h**2 - dist**2) ** 3
+                rho += p.mass * w
+
+        # Normalize kernel
+        p.rho = rho * (4 / (np.pi * h**8))
+
+        # Equation of state — pressure from density
+        p.pressure = k_sph * (p.rho - rho0)
+
     for _, p in enumerate(particles):
         # Move
         p.x += p.vx * dt
@@ -332,7 +354,7 @@ def recaller():
         for wall in inner_walls:
             wall.bounce(p)
     update_grid()
-
+    
 frame_count = 0
     
 def update(frame):
