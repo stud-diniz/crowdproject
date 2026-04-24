@@ -22,11 +22,14 @@ wallf = 1.0     # Walls repellant force
 cutoff       = 5  #threshold of proximity
 long_strength = 0.5 #Multiplier on the force between distant particles
 long_cutoff  = 10 #threshold of proximity of distant particles
+goal_x = 45.5   # center of the exit gap
+goal_y = 91.0
+v_pref = 1.4    # preferred speed in m/s (matches paper)
+tau   = 0.5     # relaxation time — how quickly particle steers toward goal. "Smoothing" force so they are gentle
 
         # Class "Variables" from CSV file for easier run
 def rgb(r, g, b):
     return (r/255, g/255, b/255)
-
 #####################################################################################
 #                              PARTICLE
 
@@ -277,17 +280,25 @@ def draw_grid():
 
 #Scale down the animation size. physical size
 def recaller():
-    # Build a KDTree from all current particle positions
+    # Store neighbors per particle after building the tree
     positions = np.array([[p.x, p.y] for p in particles])
     tree = cKDTree(positions)
 
+    # Build neighbor lists — reusable for density, pressure, acceleration
+    neighbor_lists = tree.query_ball_point(positions, r=h)
+
+# Attaching the pairs based on the "bell" kernel from SPH
+    for i, p in enumerate(particles):
+        p.neighbors = neighbor_lists[i]
     # Query all pairs within search radius h
     pairs = tree.query_pairs(r=h)
-    for i, j in pairs:
-            p1 = particles[i]
-            p2 = particles[j]
 
-            fx, fy = Particle.f_repulse(p1, p2)
+    for i, p1 in enumerate(particles):
+        for j in p1.neighbors:
+            if j <= i:  # avoid double counting
+                continue
+            p2 = particles[j]
+            fx, fy = p1.f_repulse(p2)
             # ^^ Get only "related" particles like neighborhoods
 
             # Applies force to both particles in opposite directions
@@ -295,7 +306,20 @@ def recaller():
             p1.vy += (fy / p1.mass) * dt
             p2.vx -= (fx / p2.mass) * dt
             p2.vy -= (fy / p2.mass) * dt
-    
+    # Task 3 — preferred velocity steering
+    for p in particles:
+        dx = goal_x - p.x
+        dy = goal_y - p.y
+        dist = (dx**2 + dy**2) ** 0.5 + 0.001
+
+        # Unit vector toward goal, scaled to preferred speed
+        vpx = (dx / dist) * v_pref
+        vpy = (dy / dist) * v_pref
+
+        # Nudge current velocity toward preferred velocity over time tau
+        p.vx += (vpx - p.vx) / tau * dt
+        p.vy += (vpy - p.vy) / tau * dt
+
     for _, p in enumerate(particles):
         # Move
         p.x += p.vx * dt
@@ -346,5 +370,7 @@ print(f"\n--- Simulation Summary ---")
 print(f"Runtime:          {elapsed:.2f}s")          # Name speaks for itself
 print(f"Frames rendered:  {frame_count}")          # Absolute Fps count
 print(f"Total particles:  {int(grid_data.sum())}")  # Incase we forget the particle sum
-print(f"Peak cell count:  {int(grid_data.max())}")  # Which cell has the highest amount?
-print(f"Peak cell index:  {np.unravel_index(np.argmax(grid_data), grid_data.shape)}") #Or this one does?
+print(f"Peak cell count:  {int(grid_data.max())}")  # The highest amount of particles in any cell
+
+raek, kol = np.unravel_index(np.argmax(grid_data), grid_data.shape) #raek=row, kol=column. Danishfied to avoid mishap
+print(f"Peak cell index:  ({int(raek)}, {int(kol)})") # Tells which cell has the max particles
