@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.animation import FuncAnimation
 import numpy as np
+import scipy as sp
 from random import uniform
 
 #
@@ -11,6 +12,7 @@ from random import uniform
 partnr = 1500     # Count of particles
 fps = 60
 r = 0.2         # Radius of particle in meter
+h = 1           # Radius of search in meter
 m = 70          # Mass in kg
 sl = 2          # Multiplier on the random start speed
 strength = 10    # Multiplier on the force between particles
@@ -55,6 +57,11 @@ class Particle:
             return 0, 0
 
         return force * ux, force * uy
+    
+    def searcher(self, other):
+            for i in range(partnr):
+                bell = sp.spatial.count_neighbors(self.radius + h) #the bell in 2D
+                return bell
         
 #########################################################
 #                           ROOM
