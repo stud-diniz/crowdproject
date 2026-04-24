@@ -296,17 +296,17 @@ frame_count = 0
 def recaller():
     global px, py, vx, vy, rho, pressure, neighbors
 
-    # Task 1 — build KDTree from current positions
+    # Build KDTree from current positions
     positions = np.column_stack((px, py))
     tree = cKDTree(positions)
 
-    # Task 2 — build neighbor lists, reusable for density, pressure, acceleration
+    # Get neighbors
     neighbor_lists = tree.query_ball_point(positions, r=h)
     # Attaching the pairs based on the "bell" kernel from SPH
     for i in range(partnr):
         neighbors[i] = neighbor_lists[i]
 
-    # Task 3 — preferred velocity steering
+    # Speeds to goal
     dx = goal_x - px
     dy = goal_y - py
     dist = np.sqrt(dx**2 + dy**2) + 0.001
@@ -317,13 +317,13 @@ def recaller():
     vx += (vpx - vx) / tau * dt
     vy += (vpy - vy) / tau * dt
 
-    # Task 2 — contact forces via neighbor loop
+    # Vector forces and particle counting
     for i in range(partnr):
         for j in neighbors[i]:
             if j <= i:  # avoid double counting
                 continue
             fx, fy = particle_proto.f_repulse(i, j)
-            # ^^ Get only "related" particles like neighborhoods
+            
 
             # Applies force to both particles in opposite directions
             vx[i] += (fx / m) * dt
@@ -331,7 +331,7 @@ def recaller():
             vx[j] -= (fx / m) * dt
             vy[j] -= (fy / m) * dt
 
-    # Task 4 — SPH density and pressure
+    # SPH density and pressure. Makes them move like "liquid"-esque
     for i in range(partnr):
         rho_i = 0.0
         for j in neighbors[i]:
@@ -350,8 +350,8 @@ def recaller():
         # Equation of state — pressure from density
         pressure[i] = k_sph * (rho[i] - rho0)
 
-    # Task 5 — SPH pressure and viscosity acceleration
-    for i in range(partnr):
+    # SPH pressure and viscosity acceleration. Makes it smoother towards exit
+    for i in range(partnr): #For loop issue, will look into it
         ax_sph = 0.0
         ay_sph = 0.0
         for j in neighbors[i]:
@@ -379,7 +379,7 @@ def recaller():
         vx[i] += ax_sph * dt
         vy[i] += ay_sph * dt
 
-    # Task 6 — Move
+    # Actually move them
     px += vx * dt
     py += vy * dt
 
