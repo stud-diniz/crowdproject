@@ -8,7 +8,7 @@ from random import uniform
 #####################################################################################
 #                               VARIABLES
 
-partnr = 150     # Count of particles
+partnr = 1500     # Count of particles
 fps = 60
 r = 0.2         # Radius of particle in meter
 m = 70          # Mass in kg
@@ -163,26 +163,26 @@ class Wall:
                     p.y = y1 + along * ty - ny * p.radius
 #####################################################################################
 #                               SETUP
-                                    #(0.5, 9.5) ─────────────── (9.5, 9.5)   ← top
+                                    #(0.5, 90.5) ─────────────── (90.5, 90.5)   ← top
                                     #    |                               |
                                     #    |                               |
                                     #    |                               |
-                                    #(0.5, 0.5) ─────────────── (9.5, 0.5)   ← bottom
+                                    #(0.5, 0.5) ─────────────── (90.5, 0.5)   ← bottom
                                     #↑ left                        right ↑
                                             
 fig, ax = plt.subplots(figsize=(8, 8))
-ax.set_xlim(0, 10)
-ax.set_ylim(0, 10)
+ax.set_xlim(0, 90)
+ax.set_ylim(0, 90)
 ax.set_aspect('equal')
 ax.axis('off')
 
 # --- Define your floor plan dimensions here ---
-room = Room(0.5, 0.5, 9, 9)
+room = Room(0.5, 0.5, 90, 90)
 
 inner_walls = [
     #(x1,y1), (x2,y2), (x3,y3), (x4,y4)
-    Wall(0.5, 8,   0.5, 7.5,   4, 9.5,   3.8, 9.5),   # left wall
-    Wall(9.5, 8,   9.5, 7.5,     5.8, 9.5, 6, 9.5),   # right  wall
+    Wall(0.5, 80,   0.5, 70.5,   40, 90.5,   30.8, 90.5),   # left wall
+    Wall(90.5, 80,   90.5, 70.5,     50.8, 90.5, 60, 90.5),   # right  wall
 ]
 
 room.draw(ax)
@@ -227,8 +227,8 @@ for _ in range(partnr):
 
 
 grid_spacing = 1      # size of each cell in meters
-grid_cols = int(9 / grid_spacing)   # number of columns
-grid_rows = int(9 / grid_spacing)   # number of rows
+grid_cols = int(90 / grid_spacing)   # number of columns
+grid_rows = int(90 / grid_spacing)   # number of rows
 
 # 2D array to store data — e.g. particle count per cell
 grid_data = np.zeros((grid_rows, grid_cols))
@@ -269,7 +269,7 @@ def draw_grid(ax):
 #####################################################################################
 #                               ANIMATION
 
-
+#Scale down the animation size. physical size
 def recaller():
     for i in range(len(particles)):
         for j in range(i + 1, len(particles)):  # i+1 avoids double counting
