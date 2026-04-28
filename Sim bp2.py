@@ -84,8 +84,6 @@ class Room:
         )
         ax.add_patch(rect)
 
-    def roomexit(self,ax):
-        # Making the doors
         
 
     def bounce_np(self):
