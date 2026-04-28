@@ -58,24 +58,19 @@ class Room:
         ax.add_patch(rect)
 
         
-    def bounce_np(self):
-        """Bounce particles off room walls using numpy arrays"""
-        # Left wall
-        mask = px - r < self.x
-        px[mask] = self.x + r
-        vx[mask] = np.abs(vx[mask])
-        # Right wall
-        mask = px + r > self.x + self.w
-        px[mask] = self.x + self.w - r
-        vx[mask] = -np.abs(vx[mask])
-        # Bottom wall
-        mask = py - r < self.y
-        py[mask] = self.y + r
-        vy[mask] = np.abs(vy[mask])
-        # Top wall
-        mask = py + r > self.y + self.h
-        py[mask] = self.y + self.h - r
-        vy[mask] = -np.abs(vy[mask])
+    def bounce(self):
+            global px_arr, py_arr, vx_arr, vy_arr
+            left  = px_arr - r < self.x
+            right = px_arr + r > self.x + self.w
+            bot   = py_arr - r < self.y
+            # Top wall: only bounce particles that are NOT in the door's x-range
+            in_door_gap = (px_arr >= door_x1) & (px_arr <= door_x2)
+            top   = (py_arr + r > self.y + self.h) & ~in_door_gap
+
+            px_arr[left]  = self.x + r;          vx_arr[left]  = np.abs(vx_arr[left])
+            px_arr[right] = self.x + self.w - r; vx_arr[right] = -np.abs(vx_arr[right])
+            py_arr[bot]   = self.y + r;          vy_arr[bot]   = np.abs(vy_arr[bot])
+            py_arr[top]   = self.y + self.h - r; vy_arr[top]   = -np.abs(vy_arr[top])
 
 #####################################################################################
 #                           WALL-E
