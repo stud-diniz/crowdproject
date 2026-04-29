@@ -463,7 +463,11 @@ elapsed = end_time - start_time
 
 print(f"\n--- Simulation Summary ---")
 print(f"Runtime:          {elapsed:.2f}s")          # Name speaks for itself
-print(f"Total particles:  {int(grid_data.sum())}")  # In case we forget the particle sum
+print(f"Frames rendered:  {frame_idx[0]}")
+print(f"Average FPS:      {frame_idx[0] / elapsed:.2f}")
+print(f"Total particles (start):  {partnr}")
+print(f"Still in room:            {len(px_arr)}")
+print(f"Exited:                   {partnr - len(px_arr)}")
 print(f"Peak cell count:  {int(grid_data.max())}")  # The highest amount of particles in any cell
 
 raek, kol = np.unravel_index(np.argmax(grid_data), grid_data.shape)  # raek=row, kol=column. Danishfied to avoid mishap
