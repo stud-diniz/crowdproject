@@ -1,4 +1,4 @@
-partnr = 150     # Count of particles
+partnr = 10     # Count of particles
 fps = 60
 r = 0.2         # Radius of particle in meter
 h = 1           # Radius of search in meter

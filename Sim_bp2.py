@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.animation import FuncAnimation
@@ -6,8 +8,10 @@ from scipy.spatial import cKDTree
 import time
 from random import uniform
 from collections import defaultdict
+from classes_walls import inner_walls
 from classes_walls import *
 from config import *
+
 
 ACTIVE_WALLS = inner_walls.wallie1  # change here to switch layouts
 
@@ -57,8 +61,8 @@ class Room:
 #                         OPEN THE NOOR
 
 # Door x-range constants — used by both Door.check() and Room.bounce() to agree on the gap
-door_x1 = 22.5
-door_x2 = 28.5
+door_x1 = 12.5
+door_x2 = 18
 
 class Door:
     def __init__(self, x1, y1, x2, y2):
@@ -108,12 +112,17 @@ dt = 1 / fps  # Frame time
 px_list, py_list, vx_list, vy_list = [], [], [], []
 
 for _ in range(partnr):
+    attempts = 0
     while True:
-        # Finding random positions
+        attempts += 1
+        if attempts > 1000:  # give up and place anywhere
+            x = uniform(room.x + r, room.x + room.w - r)
+            y = uniform(room.y + r, room.y + room.h - r)
+            break
+            
         x = uniform(room.x + r, room.x + room.w - r)
         y = uniform(room.y + r, room.y + room.h - r)
 
-        # Make sure it doesn't spawn inside a wall
         in_wall = False
         for wall in ACTIVE_WALLS:
             xs = [c[0] for c in wall.corners]
@@ -127,6 +136,8 @@ for _ in range(partnr):
     py_list.append(y)
     vx_list.append(uniform(-sl, sl))  # sl — multiplier of the random start speed
     vy_list.append(uniform(-sl, sl))
+for wall in ACTIVE_WALLS:
+    wall.draw(ax)
 
 # Convert to numpy arrays after spawn
 px_arr = np.array(px_list)
@@ -213,17 +224,8 @@ def recaller():
     global px_arr, py_arr, vx_arr, vy_arr, rho_arr, pressure_arr
 
     n = len(px_arr)
-    if n < 2:
+    if n == 0:
         return
-
-    # Build KDTree from current positions
-    positions = np.column_stack((px_arr, py_arr))
-    tree = cKDTree(positions)
-
-    # Get neighbors within search radius h
-    neighbor_lists = tree.query_ball_point(positions, r=h)
-    # Attaching the pairs based on the "bell" kernel from SPH
-
     # --- Goal-seeking force ---
     # Vector toward exit, scaled to preferred speed
     dx = goal_x - px_arr
@@ -235,72 +237,81 @@ def recaller():
     # Nudge current velocity toward preferred velocity over relaxation time tau
     vx_arr += (vpx - vx_arr) / tau * dt
     vy_arr += (vpy - vy_arr) / tau * dt
+    if n < 2:   
+        # Build KDTree from current positions
+        positions = np.column_stack((px_arr, py_arr))
+        tree = cKDTree(positions)
 
-    # --- Pairwise repulsion (short + long range) ---
-    # Applies force to both particles in opposite directions
-    for i in range(n):
-        for j in neighbor_lists[i]:
-            if j <= i:  # Avoid double counting
-                continue
-            ddx = px_arr[i] - px_arr[j]
-            ddy = py_arr[i] - py_arr[j]
-            d = (ddx**2 + ddy**2) ** 0.5 + 0.001
-            ux, uy = ddx / d, ddy / d
-            # Applying the cutoff to prioritise interactions
-            if d < cutoff:
-                force = strength * (cutoff - d)
-            elif d < long_cutoff:
-                force = long_strength * (long_cutoff - d)
-            else:
-                continue
-            fx, fy = force * ux, force * uy
-            vx_arr[i] += (fx / m) * dt
-            vy_arr[i] += (fy / m) * dt
-            vx_arr[j] -= (fx / m) * dt
-            vy_arr[j] -= (fy / m) * dt
+        # Get neighbors within search radius h
+        neighbor_lists = tree.query_ball_point(positions, r=h)
+        # Attaching the pairs based on the "bell" kernel from SPH
 
-    # --- SPH density + pressure ---
-    # Makes them move like "liquid"-esque
-    for i in range(n):
-        rho_i = 0.0
-        for j in neighbor_lists[i]:
-            ddx = px_arr[i] - px_arr[j]
-            ddy = py_arr[i] - py_arr[j]
-            dist_ij = (ddx**2 + ddy**2) ** 0.5
-            # Poly6 smoothing kernel
-            if dist_ij < h:
-                w = (h**2 - dist_ij**2) ** 3
-                rho_i += m * w
-        # Normalize kernel
-        rho_arr[i] = rho_i * (4 / (np.pi * h**8))
-        # Equation of state — pressure from density
-        pressure_arr[i] = k_sph * (rho_arr[i] - rho0)
 
-    # --- SPH pressure + viscosity acceleration ---
-    # Makes it smoother towards exit
-    for i in range(n):
-        ax_sph = 0.0
-        ay_sph = 0.0
-        for j in neighbor_lists[i]:
-            if j == i:
-                continue
-            ddx = px_arr[i] - px_arr[j]
-            ddy = py_arr[i] - py_arr[j]
-            dist_ij = (ddx**2 + ddy**2) ** 0.5 + 0.001
-            ux, uy = ddx / dist_ij, ddy / dist_ij
-            # Spiky kernel gradient for pressure
-            if dist_ij < h:
-                dw = -3 * (h - dist_ij)**2  # Derivative of spiky kernel
-                # Pressure force — pushes from high to low density
-                pressure_term = (pressure_arr[i] / (rho_arr[i]**2 + 0.001) +
-                                 pressure_arr[j] / (rho_arr[j]**2 + 0.001))
-                ax_sph += -m * pressure_term * dw * ux
-                ay_sph += -m * pressure_term * dw * uy
-                # Viscosity — dampens relative velocity between neighbors
-                ax_sph += mu * (vx_arr[j] - vx_arr[i]) * dw / (rho_arr[j] + 0.001)
-                ay_sph += mu * (vy_arr[j] - vy_arr[i]) * dw / (rho_arr[j] + 0.001)
-        vx_arr[i] += ax_sph * dt
-        vy_arr[i] += ay_sph * dt
+        # --- Pairwise repulsion (short + long range) ---
+        # Applies force to both particles in opposite directions
+        for i in range(n):
+            for j in neighbor_lists[i]:
+                if j <= i:  # Avoid double counting
+                    continue
+                ddx = px_arr[i] - px_arr[j]
+                ddy = py_arr[i] - py_arr[j]
+                d = (ddx**2 + ddy**2) ** 0.5 + 0.001
+                ux, uy = ddx / d, ddy / d
+                # Applying the cutoff to prioritise interactions
+                if d < cutoff:
+                    force = strength * (cutoff - d)
+                elif d < long_cutoff:
+                    force = long_strength * (long_cutoff - d)
+                else:
+                    continue
+                fx, fy = force * ux, force * uy
+                vx_arr[i] += (fx / m) * dt
+                vy_arr[i] += (fy / m) * dt
+                vx_arr[j] -= (fx / m) * dt
+                vy_arr[j] -= (fy / m) * dt
+
+        # --- SPH density + pressure ---
+        # Makes them move like "liquid"-esque
+        for i in range(n):
+            rho_i = 0.0
+            for j in neighbor_lists[i]:
+                ddx = px_arr[i] - px_arr[j]
+                ddy = py_arr[i] - py_arr[j]
+                dist_ij = (ddx**2 + ddy**2) ** 0.5
+                # Poly6 smoothing kernel
+                if dist_ij < h:
+                    w = (h**2 - dist_ij**2) ** 3
+                    rho_i += m * w
+            # Normalize kernel
+            rho_arr[i] = rho_i * (4 / (np.pi * h**8))
+            # Equation of state — pressure from density
+            pressure_arr[i] = k_sph * (rho_arr[i] - rho0)
+
+        # --- SPH pressure + viscosity acceleration ---
+        # Makes it smoother towards exit
+        for i in range(n):
+            ax_sph = 0.0
+            ay_sph = 0.0
+            for j in neighbor_lists[i]:
+                if j == i:
+                    continue
+                ddx = px_arr[i] - px_arr[j]
+                ddy = py_arr[i] - py_arr[j]
+                dist_ij = (ddx**2 + ddy**2) ** 0.5 + 0.001
+                ux, uy = ddx / dist_ij, ddy / dist_ij
+                # Spiky kernel gradient for pressure
+                if dist_ij < h:
+                    dw = -3 * (h - dist_ij)**2  # Derivative of spiky kernel
+                    # Pressure force — pushes from high to low density
+                    pressure_term = (pressure_arr[i] / (rho_arr[i]**2 + 0.001) +
+                                    pressure_arr[j] / (rho_arr[j]**2 + 0.001))
+                    ax_sph += -m * pressure_term * dw * ux
+                    ay_sph += -m * pressure_term * dw * uy
+                    # Viscosity — dampens relative velocity between neighbors
+                    ax_sph += mu * (vx_arr[j] - vx_arr[i]) * dw / (rho_arr[j] + 0.001)
+                    ay_sph += mu * (vy_arr[j] - vy_arr[i]) * dw / (rho_arr[j] + 0.001)
+            vx_arr[i] += ax_sph * dt
+            vy_arr[i] += ay_sph * dt
 
     # --- Integrate positions ---
     px_arr += vx_arr * dt
@@ -308,9 +319,9 @@ def recaller():
 
     # --- Boundary conditions ---
     room.bounce()
-    for wall in inner_walls:
-        wall.bounce()
-
+    for wall in ACTIVE_WALLS:
+        px_arr, py_arr, vx_arr, vy_arr = wall.bounce(px_arr, py_arr, vx_arr, vy_arr)
+    
     door.check()
     update_grid()
 
@@ -347,6 +358,7 @@ animation = FuncAnimation(
 )
 
 plt.tight_layout()
+plt.get_current_fig_manager().window.lift()  # for TkAgg
 plt.show()
 
 #####################################################################################

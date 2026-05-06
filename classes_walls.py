@@ -64,8 +64,12 @@ class Wall:
 
 class inner_walls():
     wallie1 = [
-        Wall(0.5, 20,   0.5, 30.5,   10, 30.5,   0.5, 20),   # left wall
-        Wall(30.5, 20,   30.5, 0.5,   10, 30.5,  0.5, 30.5),  # right wall
+        # wall setup wall(x1,y1, x2,y2, x3,y3, x4,y4)
+        # Left funnel wall 
+        Wall(0.5, 15.5,   0.5, 30.5,   13.5, 30.5,   12.5, 30.5),
+
+        # Right funnel wall
+        Wall(30.5, 15.5,  30.5, 30.5,  30.5, 30.5,   18, 30.5),
     ]
     wallie2 = [
         Wall(0.5, 20,   0.5, 30.5,   10, 30.5,   0.5, 20),   # left wall
