@@ -10,7 +10,7 @@ from collections import defaultdict
 #####################################################################################
 #                               VARIABLES
 
-partnr = 1500     # Count of particles
+partnr = 150     # Count of particles
 fps = 60
 r = 0.2         # Radius of particle in meter
 h = 1           # Radius of search in meter
@@ -108,7 +108,7 @@ class Wall:
 
             # Normal vector (perpendicular to edge)
             nx, ny = -ty, tx
-
+    
             # Vector from edge start to each particle
             dx = px_arr - x1;  dy = py_arr - y1
 
@@ -145,8 +145,8 @@ class Wall:
 #                         OPEN THE NOOR
 
 # Door x-range constants — used by both Door.check() and Room.bounce() to agree on the gap
-door_x1 = 40
-door_x2 = 55
+door_x1 = 22.5
+door_x2 = 28.5
 
 class Door:
     def __init__(self, x1, y1, x2, y2):
@@ -167,33 +167,33 @@ class Door:
 
 #####################################################################################
 #                               SETUP
-                                    #(0.5, 90.5) ─────────────── (90.5, 90.5)   ← top
+                                    #(0.5, 30.5) ─────────────── (30.5, 30.5)   ← top
                                     #    |                               |
                                     #    |                               |
                                     #    |                               |
-                                    #(0.5, 0.5) ─────────────── (90.5, 0.5)   ← bottom
+                                    #(0.5, 0.5) ─────────────── (30.5, 0.5)   ← bottom
                                     #↑ left                        right ↑
 
 fig, ax = plt.subplots(figsize=(8, 8))
-ax.set_xlim(0, 90)
-ax.set_ylim(0, 90)
+ax.set_xlim(0, 30)
+ax.set_ylim(0, 30)
 ax.set_aspect('equal')
 ax.axis('off')
 
 # --- Define your floor plan dimensions here ---
-room = Room(0.5, 0.5, 90, 90)
+room = Room(0.5, 0.5, 30, 30)
 
 inner_walls = [
     #(x1,y1), (x2,y2), (x3,y3), (x4,y4)
-    Wall(0.5, 80,   0.5, 70.5,   40, 90.5,   30.8, 90.5),   # left wall
-    Wall(90.5, 80,   90.5, 70.5,   50.8, 90.5, 60, 90.5),   # right wall
+    Wall(0.5, 20,   0.5, 30.5,   10, 30.5,   0.5, 20),   # left wall
+    Wall(30.5, 20,   30.5, 0.5,   10, 30.5,  0.5, 30.5),   # right wall
 ]
 
 room.draw(ax)
 for wall in inner_walls:
     wall.draw(ax)
 
-door = Door(door_x1, 90.5, door_x2, 90.5)   # the gap between your two inner_walls
+door = Door(door_x1, 30.5, door_x2, 30.5)   # the gap between your two inner_walls
 door.draw(ax)
 
 #####################################################################################
@@ -246,8 +246,8 @@ for c in circles:
 #                               GRID
 
 grid_spacing = 1      # Size of each cell in meters
-grid_cols = int(90 / grid_spacing)   # Number of columns
-grid_rows = int(90 / grid_spacing)   # Number of rows
+grid_cols = int(30 / grid_spacing)   # Number of columns
+grid_rows = int(30 / grid_spacing)   # Number of rows
 
 # 2D array to store data — e.g. particle count per cell
 grid_data = np.zeros((grid_rows, grid_cols))
