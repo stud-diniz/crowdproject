@@ -22,7 +22,7 @@ root.destroy()
 
 banking = 'bank.csv'
 if not os.path.exists(banking):
-    pd.DataFrame(columns=['wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps']
+    pd.DataFrame(columns=['sim_nr','wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps']
                  ).to_csv(banking, index=False)
 
 
@@ -355,6 +355,25 @@ def live_stats():
         f"Exited\n{total_exited}/{partnr}\n\n"
         f"Avg flow\n{avg_flow:.2f} p/s"
     )
+
+def save_results():
+    end_time = time.time()
+    elapsed = end_time - start_time
+    wall_name = [k for k, v in vars(inner_walls).items() if v is ACTIVE_WALLS][0]
+    # Count existing rows to get iteration number
+    existing = pd.read_csv(banking)
+    sim_nr = len(existing) + 1
+
+    new_row = pd.DataFrame([{
+        'wall_setup':   wall_name,
+        'elapsed_s':    round(elapsed, 2),
+        'total_exited': partnr,
+        'avg_flow_ps':  round(partnr / elapsed, 2),
+        'frames':       frame_idx[0],
+        'avg_fps':      round(frame_idx[0] / elapsed, 2),
+    }])
+    new_row.to_csv(banking, mode='a', header=False, index=False)
+    print(f"Sim {sim_nr} results saved to {banking}")
 #####################################################################################
 #                               ANIMATION
 info_text = info_ax.text(0.5, 0.5, '', ha='center',
@@ -376,6 +395,13 @@ def update(frame):
         flow_log.append((frame_idx[0], new_exits))
 
     live_stats()
+
+    # Stop when all particles have exited
+    if len(px_arr) == 0:
+        animation.event_source.stop()
+        plt.close(fig)
+        save_results()
+
     for i, _ in enumerate(circles):
         circles[i].center = (px_arr[i], py_arr[i])
     return circles + [info_text]
@@ -422,18 +448,3 @@ print(f"Peak cell count:  {int(grid_data.max())}")  # The highest amount of part
 
 raek, kol = np.unravel_index(np.argmax(grid_data), grid_data.shape)  # raek=row, kol=column. Danishfied to avoid mishap
 print(f"Peak cell index:  ({int(raek)}, {int(kol)})")  # Tells which cell has the max particles
-
-
-wall_name = [k for k, v in vars(inner_walls).items() if v is ACTIVE_WALLS][0]
-
-new_row = pd.DataFrame([{
-    'wall_setup':    wall_name,
-    'elapsed_s':     round(elapsed, 2),
-    'total_exited':  partnr - len(px_arr),
-    'avg_flow_ps':   round((partnr - len(px_arr)) / elapsed, 2),
-    'frames':        frame_idx[0],
-    'avg_fps':       round(frame_idx[0] / elapsed, 2),
-}])
-
-new_row.to_csv(banking, mode='a', header=False, index=False)
-print(f"\nResults appended to {banking}")
