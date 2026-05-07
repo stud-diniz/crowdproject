@@ -357,23 +357,32 @@ def live_stats():
     )
 
 def save_results():
-    end_time = time.time()
-    elapsed = end_time - start_time
-    wall_name = [k for k, v in vars(inner_walls).items() if v is ACTIVE_WALLS][0]
-    # Count existing rows to get iteration number
-    existing = pd.read_csv(banking)
-    sim_nr = len(existing) + 1
+    try:
+        end_time = time.time()
+        elapsed = end_time - start_time
+        wall_name = [k for k, v in vars(inner_walls).items() if v is ACTIVE_WALLS][0]
 
-    new_row = pd.DataFrame([{
-        'wall_setup':   wall_name,
-        'elapsed_s':    round(elapsed, 2),
-        'total_exited': partnr,
-        'avg_flow_ps':  round(partnr / elapsed, 2),
-        'frames':       frame_idx[0],
-        'avg_fps':      round(frame_idx[0] / elapsed, 2),
-    }])
-    new_row.to_csv(banking, mode='a', header=False, index=False)
-    print(f"Sim {sim_nr} results saved to {banking}")
+        if os.path.exists(banking):
+            existing = pd.read_csv(banking)
+            sim_nr = len(existing) + 1
+        else:
+            sim_nr = 1
+
+        new_row = pd.DataFrame([{
+            'sim_nr':       sim_nr,
+            'wall_setup':   wall_name,
+            'elapsed_s':    round(elapsed, 2),
+            'total_exited': partnr,
+            'avg_flow_ps':  round(partnr / elapsed, 2),
+            'frames':       frame_idx[0],
+            'avg_fps':      round(frame_idx[0] / elapsed, 2),
+        }])
+
+        new_row.to_csv(banking, mode='a', header=not os.path.exists(banking), index=False)
+        print(f"Sim {sim_nr} saved — {wall_name}, {elapsed:.1f}s")
+
+    except Exception as e:
+        print(f"Save failed: {e}")
 #####################################################################################
 #                               ANIMATION
 info_text = info_ax.text(0.5, 0.5, '', ha='center',
@@ -396,11 +405,10 @@ def update(frame):
 
     live_stats()
 
-    # Stop when all particles have exited
     if len(px_arr) == 0:
         animation.event_source.stop()
+        save_results()        # ← save BEFORE closing
         plt.close(fig)
-        save_results()
 
     for i, _ in enumerate(circles):
         circles[i].center = (px_arr[i], py_arr[i])
