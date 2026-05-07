@@ -59,7 +59,7 @@ class Wall:
             px_arr[idx[~pos_side]] = x1 + a_t[~pos_side] * tx - nx * r
             py_arr[idx[~pos_side]] = y1 + a_t[~pos_side] * ty - ny * r
 
-        return px_arr, py_arr, vx_arr, vy_arr  # ← now outside the loop
+        return px_arr, py_arr, vx_arr, vy_arr  # now outside the loop
 
 
 class inner_walls():
