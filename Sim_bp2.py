@@ -11,9 +11,22 @@ from collections import defaultdict
 from classes_walls import inner_walls
 from classes_walls import *
 from config import *
+import tkinter as tk
+import pandas as pd
+import os
+
+root = tk.Tk()
+screen_w = root.winfo_screenwidth()
+screen_h = root.winfo_screenheight()
+root.destroy()
+
+banking = 'bank.csv'
+if not os.path.exists(banking):
+    pd.DataFrame(columns=['wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps']
+                 ).to_csv(banking, index=False)
 
 
-ACTIVE_WALLS = inner_walls.wallie1  # change here to switch layouts
+ACTIVE_WALLS = inner_walls.wallie2  # change here to switch layouts
 
 def rgb(r, g, b):
     return (r/255, g/255, b/255)
@@ -61,8 +74,6 @@ class Room:
 #                         OPEN THE NOOR
 
 # Door x-range constants — used by both Door.check() and Room.bounce() to agree on the gap
-door_x1 = 12.5
-door_x2 = 18
 
 class Door:
     def __init__(self, x1, y1, x2, y2):
@@ -90,11 +101,20 @@ class Door:
                                     #(0.5, 0.5) ─────────────── (30.5, 0.5)   ← bottom
                                     #↑ left                        right ↑
 
-fig, ax = plt.subplots(figsize=(8, 8))
-ax.set_xlim(0, 30)
-ax.set_ylim(0, 30)
+# Inserted figure into window to display infomation
+fig = plt.figure(figsize=(screen_w/100, screen_h/100))
+manager = plt.get_current_fig_manager()
+manager.window.wm_geometry(f"{screen_w}x{screen_h}+0+0")
+
+ax = fig.add_axes([0.02, 0.02, 0.7, 0.96])
+info_ax = fig.add_axes([0.73, 0.0, 0.27, 1.0])
+info_ax.axis('off')
+
+ax.set_xlim(0, 31)
+ax.set_ylim(0, 31)
 ax.set_aspect('equal')
 ax.axis('off')
+
 
 # --- Define your floor plan dimensions here ---
 room = Room(0.5, 0.5, 30, 30)
@@ -325,8 +345,21 @@ def recaller():
     door.check()
     update_grid()
 
+#Making the function for information shown on screen
+def live_stats():
+    total_exited = partnr - len(px_arr)
+    elapsed_seconds = frame_idx[0] / fps
+    avg_flow = total_exited / elapsed_seconds if elapsed_seconds > 0 else 0.0
+    info_text.set_text(
+        f"Elapsed\n{elapsed_seconds:.1f}s\n\n"
+        f"Exited\n{total_exited}/{partnr}\n\n"
+        f"Avg flow\n{avg_flow:.2f} p/s"
+    )
 #####################################################################################
 #                               ANIMATION
+info_text = info_ax.text(0.5, 0.5, '', ha='center',
+                          va='center', fontsize=11, transform=info_ax.transAxes)
+
 
 flow_log  = []
 frame_idx = [0]
@@ -342,9 +375,10 @@ def update(frame):
     if new_exits > 0:
         flow_log.append((frame_idx[0], new_exits))
 
+    live_stats()
     for i, _ in enumerate(circles):
         circles[i].center = (px_arr[i], py_arr[i])
-    return circles
+    return circles + [info_text]
 
 start_time = time.time()
 draw_grid()
@@ -388,3 +422,18 @@ print(f"Peak cell count:  {int(grid_data.max())}")  # The highest amount of part
 
 raek, kol = np.unravel_index(np.argmax(grid_data), grid_data.shape)  # raek=row, kol=column. Danishfied to avoid mishap
 print(f"Peak cell index:  ({int(raek)}, {int(kol)})")  # Tells which cell has the max particles
+
+
+wall_name = [k for k, v in vars(inner_walls).items() if v is ACTIVE_WALLS][0]
+
+new_row = pd.DataFrame([{
+    'wall_setup':    wall_name,
+    'elapsed_s':     round(elapsed, 2),
+    'total_exited':  partnr - len(px_arr),
+    'avg_flow_ps':   round((partnr - len(px_arr)) / elapsed, 2),
+    'frames':        frame_idx[0],
+    'avg_fps':       round(frame_idx[0] / elapsed, 2),
+}])
+
+new_row.to_csv(banking, mode='a', header=False, index=False)
+print(f"\nResults appended to {banking}")
