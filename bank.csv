@@ -1,0 +1,2 @@
+sim_nr,wall_setup,elapsed_s,total_exited,avg_flow_ps,frames,avg_fps
+1,wallie2,70.67,100,1.41,1373,19.43

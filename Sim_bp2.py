@@ -257,7 +257,7 @@ def recaller():
     # Nudge current velocity toward preferred velocity over relaxation time tau
     vx_arr += (vpx - vx_arr) / tau * dt
     vy_arr += (vpy - vy_arr) / tau * dt
-    if n < 2:   
+    if n >= 2:   
         # Build KDTree from current positions
         positions = np.column_stack((px_arr, py_arr))
         tree = cKDTree(positions)
@@ -378,11 +378,13 @@ def save_results():
             'avg_fps':      round(frame_idx[0] / elapsed, 2),
         }])
 
-        new_row.to_csv(banking, mode='a', header=not os.path.exists(banking), index=False)
+        new_row.to_csv(banking, mode='a', header=False, index=False)
         print(f"Sim {sim_nr} saved — {wall_name}, {elapsed:.1f}s")
 
     except Exception as e:
         print(f"Save failed: {e}")
+        import traceback
+        traceback.print_exc()
 #####################################################################################
 #                               ANIMATION
 info_text = info_ax.text(0.5, 0.5, '', ha='center',
@@ -425,7 +427,6 @@ animation = FuncAnimation(
     cache_frame_data=False
 )
 
-plt.tight_layout()
 plt.get_current_fig_manager().window.lift()  # for TkAgg
 plt.show()
 
