@@ -240,12 +240,8 @@ def flush_dead():
 #####################################################################################
 #                               SPH RECALLER
 
-def recaller():
-    global px_arr, py_arr, vx_arr, vy_arr, rho_arr, pressure_arr
-
-    n = len(px_arr)
-    if n == 0:
-        return
+def apply_goal_force(px_arr, py_arr, vx_arr, vy_arr):
+   
     # --- Goal-seeking force ---
     # Vector toward exit, scaled to preferred speed
     dx = goal_x - px_arr
@@ -257,67 +253,79 @@ def recaller():
     # Nudge current velocity toward preferred velocity over relaxation time tau
     vx_arr += (vpx - vx_arr) / tau * dt
     vy_arr += (vpy - vy_arr) / tau * dt
-    if n >= 2:   
-        # Build KDTree from current positions
-        positions = np.column_stack((px_arr, py_arr))
-        tree = cKDTree(positions)
 
-        # Get neighbors within search radius h
-        neighbor_lists = tree.query_ball_point(positions, r=h)
-        # Attaching the pairs based on the "bell" kernel from SPH
+def build_neighbor_list(px_arr,py_arr):
+    # Build KDTree from current positions
+    positions = np.column_stack((px_arr, py_arr))
+    tree = cKDTree(positions)
 
+    # Get neighbors within search radius h
+    neighbor_lists = tree.query_ball_point(positions, r=h)
+    # Attaching the pairs based on the "bell" kernel from SPH
+    return(neighbor_lists)
 
-        # --- Pairwise repulsion (short + long range) ---
-        # Applies force to both particles in opposite directions
-        for i in range(n):
-            for j in neighbor_lists[i]:
-                if j <= i:  # Avoid double counting
-                    continue
-                ddx = px_arr[i] - px_arr[j]
-                ddy = py_arr[i] - py_arr[j]
-                d = (ddx**2 + ddy**2) ** 0.5 + 0.001
-                ux, uy = ddx / d, ddy / d
-                # Applying the cutoff to prioritise interactions
-                if d < cutoff:
-                    force = strength * (cutoff - d)
-                elif d < long_cutoff:
-                    force = long_strength * (long_cutoff - d)
-                else:
-                    continue
-                fx, fy = force * ux, force * uy
-                vx_arr[i] += (fx / m) * dt
-                vy_arr[i] += (fy / m) * dt
-                vx_arr[j] -= (fx / m) * dt
-                vy_arr[j] -= (fy / m) * dt
+def repulse(px_arr,py_arr,vx_arr,vy_arr,neighbors):
+    # --- Pairwise repulsion (short + long range) ---
+    # Applies force to both particles in opposite directions
+    n=len(px_arr)
+    for i in range(n):
+        for j in neighbors[i]:
+            if j <= i:  # Avoid double counting
+                continue
 
-        # --- SPH density + pressure ---
-        # Makes them move like "liquid"-esque
-        for i in range(n):
-            rho_i = 0.0
-            for j in neighbor_lists[i]:
-                ddx = px_arr[i] - px_arr[j]
-                ddy = py_arr[i] - py_arr[j]
-                dist_ij = (ddx**2 + ddy**2) ** 0.5
-                # Poly6 smoothing kernel
-                if dist_ij < h:
-                    w = (h**2 - dist_ij**2) ** 3
-                    rho_i += m * w
-            # Normalize kernel
-            rho_arr[i] = rho_i * (4 / (np.pi * h**8))
-            # Equation of state — pressure from density
-            pressure_arr[i] = k_sph * (rho_arr[i] - rho0)
+            ddx = px_arr[i] - px_arr[j]
+            ddy = py_arr[i] - py_arr[j]
+            d = np.sqrt(ddx**2 + ddy**2) + 0.001
+            ux, uy = ddx / d, ddy / d
 
-        # --- SPH pressure + viscosity acceleration ---
+            # Applying the cutoff to prioritise interactions
+            if d < cutoff:
+                force = strength * (cutoff - d)
+            elif d < long_cutoff:
+                force = long_strength * (long_cutoff - d)
+            else:
+                continue
+
+            fx, fy = force * ux, force * uy
+            vx_arr[i] += (fx / m) * dt
+            vy_arr[i] += (fy / m) * dt
+            vx_arr[j] -= (fx / m) * dt
+            vy_arr[j] -= (fy / m) * dt
+
+def sph_density(px_arr,py_arr,rho_arr,pressure_arr, neighbors):
+# --- SPH density + pressure ---
+    # Makes them move like "liquid"-esque
+    n=len(px_arr)
+    for i in range(n):
+        rho_i = 0.0
+        for j in neighbors[i]:
+            ddx = px_arr[i] - px_arr[j]
+            ddy = py_arr[i] - py_arr[j]
+            dist_ij = np.sqrt(ddx**2 + ddy**2)
+
+            # Poly6 smoothing kernel
+            if dist_ij < h:
+                w = (h**2 - dist_ij**2) ** 3
+                rho_i += m * w
+
+        # Normalize kernel
+        rho_arr[i] = rho_i * (4 / (np.pi * h**8))
+        # Equation of state — pressure from density
+        pressure_arr[i] = k_sph * (rho_arr[i] - rho0)
+
+def sph_viscosity(px_arr,py_arr,vx_arr,vy_arr,rho_arr,pressure_arr, neighbors):
+# --- SPH pressure + viscosity acceleration ---
         # Makes it smoother towards exit
+        n= len(px_arr)
         for i in range(n):
             ax_sph = 0.0
             ay_sph = 0.0
-            for j in neighbor_lists[i]:
+            for j in neighbors[i]:
                 if j == i:
                     continue
                 ddx = px_arr[i] - px_arr[j]
                 ddy = py_arr[i] - py_arr[j]
-                dist_ij = (ddx**2 + ddy**2) ** 0.5 + 0.001
+                dist_ij = np.sqrt(ddx**2 + ddy**2) + 0.001
                 ux, uy = ddx / dist_ij, ddy / dist_ij
                 # Spiky kernel gradient for pressure
                 if dist_ij < h:
@@ -333,6 +341,22 @@ def recaller():
             vx_arr[i] += ax_sph * dt
             vy_arr[i] += ay_sph * dt
 
+def recaller():
+    global px_arr, py_arr, vx_arr, vy_arr, rho_arr, pressure_arr
+
+    n = len(px_arr)
+    if n == 0:
+        return
+   
+    apply_goal_force(px_arr, py_arr, vx_arr, vy_arr)
+    if n >= 2:   
+        neighbors=build_neighbor_list(px_arr,py_arr)
+
+        repulse(px_arr,py_arr,vx_arr,vy_arr,neighbors)
+        
+        sph_density(px_arr,py_arr,rho_arr,pressure_arr, neighbors)
+        
+        sph_viscosity(px_arr,py_arr,vx_arr,vy_arr,rho_arr,pressure_arr, neighbors)
     # --- Integrate positions ---
     px_arr += vx_arr * dt
     py_arr += vy_arr * dt
