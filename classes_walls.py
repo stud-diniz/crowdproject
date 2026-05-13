@@ -63,14 +63,14 @@ class Wall:
 
 
 class inner_walls():
-    wallie1=[# 30° — tall funnel, bottom at y=9.7
-        Wall(0.5, 30.5,   14.75, 30.5,   0.5, 9.7,    0.5, 30.5),   # left
-        Wall(30.5, 30.5,  16.25, 30.5,   30.5, 9.7,   30.5, 30.5)]  # right
+    wallie1=[# 30° — short funnel, bottom at y=5.82
+        Wall(0.5, 30.5,   14.75, 30.5,   0.5, 5.82,    0.5, 30.5),   # left
+        Wall(30.5, 30.5,  16.25, 30.5,   30.5, 5.82,   30.5, 30.5)]  # right
     wallie2=[
-    # 40° — medium funnel, bottom at y=16.2
-        Wall(0.5, 30.5,   14.75, 30.5,   0.5, 16.2,   0.5, 30.5),   # left
-        Wall(30.5, 30.5,  16.25, 30.5,   30.5, 16.2,  30.5, 30.5)]  # right
+    # 40° — medium funnel, bottom at y=18.54
+        Wall(0.5, 30.5,   14.75, 30.5,   0.5, 18.54,   0.5, 30.5),   # left
+        Wall(30.5, 30.5,  16.25, 30.5,   30.5, 18.54,  30.5, 30.5)]  # right
     wallie3=[
-    # 60° — short funnel, bottom at y=23.6
-        Wall(0.5, 30.5,   14.75, 30.5,   0.5, 23.6,   0.5, 30.5),   # left
-        Wall(30.5, 30.5,  16.25, 30.5,   30.5, 23.6,  30.5, 30.5)]  # right
+    # 60° — long funnel, bottom at y=22.7
+        Wall(0.5, 30.5,   14.75, 30.5,   0.5, 22.7,   0.5, 30.5),   # left
+        Wall(30.5, 30.5,  16.25, 30.5,   30.5, 22.7,  30.5, 30.5)]  # right
