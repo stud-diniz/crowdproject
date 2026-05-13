@@ -94,7 +94,7 @@ class Door:
 
 #####################################################################################
 #                               SETUP
-                                    #(0.5, 30.5) ─────────────── (30.5, 30.5)   ← top
+                                    #(0.5, 40.5) ─────────────── (30.5, 40.5)   ← top
                                     #    |                               |
                                     #    |                               |
                                     #    |                               |
@@ -117,11 +117,11 @@ ax.axis('off')
 
 
 # --- Define your floor plan dimensions here ---
-room = Room(0.5, 0.5, 30, 30)
+room = Room(0.5, 0.5, 30, 40)
 
 room.draw(ax)
 
-door = Door(door_x1, 30.5, door_x2, 30.5)   # the gap between your two inner_walls
+door = Door(door_x1, 40.5, door_x2, 40.5)   # the gap between your two inner_walls
 door.draw(ax)
 
 #####################################################################################
@@ -181,7 +181,7 @@ for c in circles:
 #                               GRID
 
 grid_spacing = 1      # Size of each cell in meters
-grid_cols = int(30 / grid_spacing)   # Number of columns
+grid_cols = int(40 / grid_spacing)   # Number of columns
 grid_rows = int(30 / grid_spacing)   # Number of rows
 
 # 2D array to store data — e.g. particle count per cell

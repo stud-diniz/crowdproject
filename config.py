@@ -28,7 +28,7 @@ door_x1 = 14.75
 door_x2 = 16.25
 # Door attactive force location
 goal_x = 15.5   # center of door (12.5 to 18.5)
-goal_y = 35.0   # just above the top wall (30.5) to pull them through
+goal_y = 45.0   # just above the top wall (30.5) to pull them through
 
 
 fps = 60
