@@ -111,7 +111,7 @@ info_ax = fig.add_axes([0.73, 0.0, 0.27, 1.0])
 info_ax.axis('off')
 
 ax.set_xlim(0, 31)
-ax.set_ylim(0, 31)
+ax.set_ylim(0, 41)
 ax.set_aspect('equal')
 ax.axis('off')
 
@@ -181,8 +181,8 @@ for c in circles:
 #                               GRID
 
 grid_spacing = 1      # Size of each cell in meters
-grid_cols = int(40 / grid_spacing)   # Number of columns
-grid_rows = int(30 / grid_spacing)   # Number of rows
+grid_cols = int(30 / grid_spacing)   # Number of columns
+grid_rows = int(40 / grid_spacing)   # Number of rows
 
 # 2D array to store data — e.g. particle count per cell
 grid_data = np.zeros((grid_rows, grid_cols))

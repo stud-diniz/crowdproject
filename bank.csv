@@ -8,3 +8,4 @@ sim_nr,wall_setup,elapsed_s,total_exited,avg_flow_ps,frames,avg_fps
 7,wallie2,193.05,1000,5.18,2073,10.74
 8,wallie2,213.47,1000,4.68,2403,11.26
 9,wallie2,213.1,1000,4.69,2391,11.22
+10,wallie2,680.65,1000,1.47,2636,3.87
