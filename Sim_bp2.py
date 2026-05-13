@@ -130,18 +130,18 @@ door.draw(ax)
 # Particle spawn
 dt = 1 / fps  # Frame time
 px_list, py_list, vx_list, vy_list = [], [], [], []
-
+spawn_limit = room.y + room.h / 3 #creates a limit for the first 1/3 of the room as a bounds for the particles spawning
 for _ in range(partnr):
     attempts = 0
     while True:
         attempts += 1
         if attempts > 1000:  # give up and place anywhere
             x = uniform(room.x + r, room.x + room.w - r)
-            y = uniform(room.y + r, room.y + room.h - r)
+            y = uniform(room.y + r, spawn_limit - r)
             break
             
         x = uniform(room.x + r, room.x + room.w - r)
-        y = uniform(room.y + r, room.y + room.h - r)
+        y = uniform(room.y + r, spawn_limit - r)
 
         in_wall = False
         for wall in ACTIVE_WALLS:
