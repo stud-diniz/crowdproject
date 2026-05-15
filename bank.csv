@@ -12,3 +12,4 @@ sim_nr,wall_setup,elapsed_s,total_exited,avg_flow_ps,frames,avg_fps
 11,wallie2,692.41,1000,1.44,2993,4.32
 12,wallie2,512.06,1000,1.95,2455,4.79
 13,wallie2,518.24,1000,1.93,2479,4.78
+14,wallie2,550.79,1000,1.82,2485,4.51
