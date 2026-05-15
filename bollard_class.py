@@ -4,7 +4,7 @@ import numpy as np
 from config import *
 
 class obstacle:
-    def __init__(self, x, y, rar, influence=6.0, strength=2.0):
+    def __init__(self, x, y, rar, influence=15.0, strength=2.0):
         self.x = x
         self.y = y
         self.radius = rar
