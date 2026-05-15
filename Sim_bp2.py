@@ -11,6 +11,7 @@ from collections import defaultdict
 from classes_walls import inner_walls
 from classes_walls import *
 from config import *
+from bollard_class import *
 import tkinter as tk
 import pandas as pd
 import os
@@ -25,7 +26,7 @@ if not os.path.exists(banking):
     pd.DataFrame(columns=['sim_nr','wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps']
                  ).to_csv(banking, index=False)
 
-
+BOLLARD = bollard_pos.centered
 ACTIVE_WALLS = inner_walls.wallie2  # change here to switch layouts
 
 def rgb(r, g, b):
@@ -158,6 +159,8 @@ for _ in range(partnr):
     vy_list.append(uniform(-sl, sl))
 for wall in ACTIVE_WALLS:
     wall.draw(ax)
+for bollard in BOLLARD:          # BOLLARD is already a list
+    bollard.draw(ax)
 
 # Convert to numpy arrays after spawn
 px_arr = np.array(px_list)
@@ -365,7 +368,9 @@ def recaller():
     room.bounce()
     for wall in ACTIVE_WALLS:
         px_arr, py_arr, vx_arr, vy_arr = wall.bounce(px_arr, py_arr, vx_arr, vy_arr)
-    
+    apply_goal_force(px_arr, py_arr, vx_arr, vy_arr)
+    for bollard in BOLLARD:
+        bollard.apply_force(px_arr, py_arr, vx_arr, vy_arr, dt)
     door.check()
     update_grid()
 

@@ -22,6 +22,8 @@ mu = 5.0        # Viscosity — dampens relative motion between neighbors
 
 # Wall forces
 wallf = 2.0     # Walls repellant force
+# bollard size
+rar = 0.5
 
 # Door
 door_x1 = 14.75
