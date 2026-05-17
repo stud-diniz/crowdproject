@@ -48,7 +48,7 @@ class obstacle:
         # Particles below the top of the splitter and within x-range get nudged left or right
         above_center = py_arr > self.y                              # above bollard center
         in_splitter   = py_arr < (self.y + self.splitter_length)   # below splitter top
-        near_x        = np.abs(dx) < self.radius * 2               # close to center x
+        near_x        = np.abs(dx) < self.radius * 3               # close to center x
         on_splitter   = above_center & in_splitter & near_x
 
         if np.any(on_splitter):
@@ -80,6 +80,7 @@ class obstacle:
 
 
 class bollard_pos():
-    centered = [obstacle(15.5, 22.5, rar, splitter_length=5.0)]
+    centered = [obstacle(15.5, 38.5, rar, splitter_length=5.0)]
     starwars = [obstacle(15.5, 20.5, rar, influence=8.0, strength=3.0)]
     hug      = [obstacle(18.5, 26.5, rar)]
+    void     = []

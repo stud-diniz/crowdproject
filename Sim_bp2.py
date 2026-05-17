@@ -21,13 +21,13 @@ screen_w = root.winfo_screenwidth()
 screen_h = root.winfo_screenheight()
 root.destroy()
 
-banking = 'bank.csv'
+banking = 'bank_v2.csv'
 if not os.path.exists(banking):
-    pd.DataFrame(columns=['sim_nr','wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps']
+    pd.DataFrame(columns=['sim_nr','wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps', 'particles', 'bollard_type']
                  ).to_csv(banking, index=False)
 
-BOLLARD = bollard_pos.centered
-ACTIVE_WALLS = inner_walls.wallie2  # change here to switch layouts
+BOLLARD = bollard_pos.void
+ACTIVE_WALLS = inner_walls.wallie1  # change here to switch layouts
 
 def rgb(r, g, b):
     return (r/255, g/255, b/255)
@@ -390,6 +390,7 @@ def save_results():
         end_time = time.time()
         elapsed = end_time - start_time
         wall_name = [k for k, v in vars(inner_walls).items() if v is ACTIVE_WALLS][0]
+        bollard_name = [k for k, v in vars(bollard_pos).items() if v is BOLLARD][0]
 
         if os.path.exists(banking):
             existing = pd.read_csv(banking)
@@ -405,6 +406,8 @@ def save_results():
             'avg_flow_ps':  round(partnr / elapsed, 2),
             'frames':       frame_idx[0],
             'avg_fps':      round(frame_idx[0] / elapsed, 2),
+            'particles':    partnr,
+            'bollard_type': bollard_name,
         }])
 
         new_row.to_csv(banking, mode='a', header=False, index=False)
