@@ -60,3 +60,5 @@ sim_nr,wall_setup,elapsed_s,total_exited,avg_flow_ps,frames,avg_fps,particles,bo
 59,wallie3,345.34,1500,4.34,3224,9.34,1500,hug
 60,wallie3,343.23,1500,4.37,3222,9.39,1500,hug
 61,wallie3,338.49,1500,4.43,3218,9.51,1500,hug
+62,wallie1,341.46,1500,4.39,2982,8.73,1500,void
+63,wallie1,340.37,1500,4.41,2983,8.76,1500,void

@@ -26,8 +26,8 @@ if not os.path.exists(banking):
     pd.DataFrame(columns=['sim_nr','wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps', 'particles', 'bollard_type']
                  ).to_csv(banking, index=False)
 
-BOLLARD = bollard_pos.hug
-ACTIVE_WALLS = inner_walls.wallie3 # change here to switch layouts
+BOLLARD = bollard_pos.void
+ACTIVE_WALLS = inner_walls.wallie1 # change here to switch layouts (codeword pizza for easy finding)
 
 def rgb(r, g, b):
     return (r/255, g/255, b/255)
@@ -413,6 +413,22 @@ def save_results():
         new_row.to_csv(banking, mode='a', header=False, index=False)
         print(f"Sim {sim_nr} saved — {wall_name}, {elapsed:.1f}s")
 
+        flow_df = pd.DataFrame(flow_time_log) #flow over time data
+
+        #creating identifiers so we can store all in one dataframe:
+        flow_df.insert(0, 'sim_nr', sim_nr)
+        flow_df.insert(1, 'wall_setup', wall_name)
+        flow_df.insert(2, 'bollard_type', bollard_name)
+        flow_df.insert(3, 'particles', partnr)
+
+        flow_df.to_csv(
+            'flow_over_time.csv',
+            mode='a',
+            header=not os.path.exists('flow_over_time.csv'),
+            index=False
+        )
+        print(f"Sim {sim_nr} saved — {wall_name}, {elapsed:.1f}s")
+
     except Exception as e:
         print(f"Save failed: {e}")
         import traceback
@@ -425,6 +441,8 @@ info_text = info_ax.text(0.5, 0.5, '', ha='center',
 
 flow_log  = []
 frame_idx = [0]
+flow_time_log = [] #stores flow data over time (simulation second + particles exited)
+last_logged_second = [-1] #keeps track of last second, starts at -1 so time 0 gets reported properly
 
 def update(frame):
     recaller()
@@ -438,6 +456,15 @@ def update(frame):
         flow_log.append((frame_idx[0], new_exits))
 
     live_stats()
+    simulation_time = frame_idx[0] / fps
+
+    if int(simulation_time) != last_logged_second[0]: #checks if the current second has been logged
+        total_exited = partnr - len(px_arr) #total number of particles exited so far
+        flow_time_log.append({
+            'time_s': int(simulation_time),
+            'total_exited': total_exited
+        })
+        last_logged_second[0] = int(simulation_time) #updates the last saved second
 
     if len(px_arr) == 0:
         animation.event_source.stop()
