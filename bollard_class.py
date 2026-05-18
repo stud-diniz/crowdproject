@@ -81,6 +81,7 @@ class obstacle:
 
 class bollard_pos():
     centered = [obstacle(15.5, 38.5, rar, splitter_length=5.0)]
-    far = [obstacle(15.5, 35.5, rar, influence=8.0, strength=3.0)]
+    far      = [obstacle(15.5, 35.5, rar, influence=8.0, strength=3.0)]
     hug      = [obstacle(16.5, 37.5, rar)]
+    close    = [obstacle(15.5, 40, rar)]
     void     = []
