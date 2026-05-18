@@ -27,7 +27,7 @@ if not os.path.exists(banking):
                  ).to_csv(banking, index=False)
 
 BOLLARD = bollard_pos.void
-ACTIVE_WALLS = inner_walls.wallie1 # change here to switch layouts (codeword pizza for easy finding)
+ACTIVE_WALLS = inner_walls.wallie2 # change here to switch layouts (codeword pizza for easy finding)
 
 def rgb(r, g, b):
     return (r/255, g/255, b/255)
