@@ -26,8 +26,9 @@ if not os.path.exists(banking):
     pd.DataFrame(columns=['sim_nr','wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps', 'particles', 'bollard_type']
                  ).to_csv(banking, index=False)
 
-BOLLARD = bollard_pos.void
-ACTIVE_WALLS = inner_walls.wallie3 # change here to switch layouts (codeword pizza for easy finding)
+BOLLARD = bollard_pos.close
+ACTIVE_WALLS = inner_walls.wallie3
+# change here to switch layouts (codeword pizza for easy finding)
 
 def rgb(r, g, b):
     return (r/255, g/255, b/255)
@@ -397,13 +398,13 @@ def save_results():
             sim_nr = len(existing) + 1
         else:
             sim_nr = 1
-
+        total_exited = partnr - len(px_arr)
         new_row = pd.DataFrame([{
             'sim_nr':       sim_nr,
             'wall_setup':   wall_name,
             'elapsed_s':    round(elapsed, 2),
-            'total_exited': partnr,
-            'avg_flow_ps':  round(partnr / elapsed, 2),
+            'total_exited': total_exited,
+            'avg_flow_ps':  round(total_exited / elapsed, 2),
             'frames':       frame_idx[0],
             'avg_fps':      round(frame_idx[0] / elapsed, 2),
             'particles':    partnr,
@@ -466,7 +467,7 @@ def update(frame):
         })
         last_logged_second[0] = int(simulation_time) #updates the last saved second
 
-    if len(px_arr) == 0:
+    if len(px_arr) == 2:
         animation.event_source.stop()
         save_results()        # ← save BEFORE closing
         plt.close(fig)
