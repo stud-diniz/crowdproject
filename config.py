@@ -1,5 +1,5 @@
 # Particle defined
-partnr = 3000     # Count of particles
+partnr = 6000     # Count of particles
 r = 0.2         # Radius of particle in meter
 h = 1           # Radius of search in meter
 m = 80          # Mass in kg
