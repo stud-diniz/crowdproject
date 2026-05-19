@@ -26,8 +26,8 @@ if not os.path.exists(banking):
     pd.DataFrame(columns=['sim_nr','wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps', 'particles', 'bollard_type']
                  ).to_csv(banking, index=False)
 
-BOLLARD = bollard_pos.void
-ACTIVE_WALLS = inner_walls.wallie2 # change here to switch layouts (codeword pizza for easy finding)
+BOLLARD = bollard_pos.close
+ACTIVE_WALLS = inner_walls.wallie1 # change here to switch layouts (codeword pizza for easy finding)
 
 def rgb(r, g, b):
     return (r/255, g/255, b/255)
