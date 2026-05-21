@@ -27,7 +27,8 @@ if not os.path.exists(banking):
                  ).to_csv(banking, index=False)
 
 BOLLARD = bollard_pos.close
-ACTIVE_WALLS = inner_walls.wallie0
+ACTIVE_WALLS = inner_walls.wallie3
+
 # change here to switch layouts (codeword pizza for easy finding)
 
 def rgb(r, g, b):
@@ -467,7 +468,7 @@ def update(frame):
         })
         last_logged_second[0] = int(simulation_time) #updates the last saved second
 
-    if len(px_arr) == 16:
+    if len(px_arr) == 2:
         animation.event_source.stop()
         save_results()        # ← save BEFORE closing
         plt.close(fig)
