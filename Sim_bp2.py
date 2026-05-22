@@ -26,8 +26,8 @@ if not os.path.exists(banking):
     pd.DataFrame(columns=['sim_nr','wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps', 'particles', 'bollard_type']
                  ).to_csv(banking, index=False)
 
-BOLLARD = bollard_pos.close
-ACTIVE_WALLS = inner_walls.wallie3
+BOLLARD = bollard_pos.hug
+ACTIVE_WALLS = inner_walls.wallie0
 
 # change here to switch layouts (codeword pizza for easy finding)
 
