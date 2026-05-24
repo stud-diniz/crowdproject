@@ -1,5 +1,5 @@
 # Particle defined
-partnr = 6000     # Count of particles
+partnr = 3000     # Count of particles
 r = 0.2         # Radius of particle in meter
 h = 1           # Radius of search in meter
 m = 80          # Mass in kg
@@ -17,7 +17,7 @@ long_cutoff = 20     # Threshold of proximity of distant particles
 # Kernel variables
 tau   = 0.5     # Relaxation time — how quickly particle steers toward goal. "Smoothing" force so they are gentle
 rho0  = 1.0    # Rest density (P/m²) — target crowd density
-k_sph = 1.0    # Gas constant — stiffness of pressure response
+k_sph = 200    # Gas constant — stiffness of pressure response
 mu = 5.0        # Viscosity — dampens relative motion between neighbors
 
 # Wall forces

@@ -26,8 +26,8 @@ if not os.path.exists(banking):
     pd.DataFrame(columns=['sim_nr','wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps', 'particles', 'bollard_type']
                  ).to_csv(banking, index=False)
 
-BOLLARD = bollard_pos.void
-ACTIVE_WALLS = inner_walls.wallie0
+BOLLARD = bollard_pos.far
+ACTIVE_WALLS = inner_walls.wallie3
 
 # change here to switch layouts (codeword pizza for easy finding)
 
@@ -354,7 +354,7 @@ def recaller():
         return
    
     apply_goal_force(px_arr, py_arr, vx_arr, vy_arr)
-    if n >= 2:   
+    if n >= 2:
         neighbors=build_neighbor_list(px_arr,py_arr)
 
         repulse(px_arr,py_arr,vx_arr,vy_arr,neighbors)
@@ -468,7 +468,7 @@ def update(frame):
         })
         last_logged_second[0] = int(simulation_time) #updates the last saved second
 
-    if len(px_arr) == 16:
+    if len(px_arr) == 10:
         animation.event_source.stop()
         save_results()        # ← save BEFORE closing
         plt.close(fig)
