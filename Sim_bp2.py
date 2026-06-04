@@ -2,9 +2,10 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import matplotlib.animation as manimation
+import matplotlib.animation as animation
 from matplotlib.animation import FuncAnimation
 import numpy as np
+from PIL import Image
 from scipy.spatial import cKDTree
 import time
 from random import uniform
@@ -28,7 +29,7 @@ if not os.path.exists(banking):
                  ).to_csv(banking, index=False)
 
 BOLLARD = bollard_pos.far
-ACTIVE_WALLS = inner_walls.wallie0
+ACTIVE_WALLS = inner_walls.wallie2
 
 # change here to switch layouts (codeword pizza for easy finding)
 
@@ -470,38 +471,69 @@ def update(frame):
         })
         last_logged_second[0] = int(simulation_time)
 
-    # Capture frame for GIF
-    buf = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
-    buf = buf.reshape(fig.canvas.get_width_height()[::-1] + (4,))
-    frames_for_gif.append(buf[:, :, :3].copy())
-
-    if len(px_arr) == 150:
-        animation.event_source.stop()
-        save_results()
-        os.makedirs('result_gifs', exist_ok=True)
-        import imageio
-        imageio.mimsave('result_gifs/test.gif', frames_for_gif, fps=30)
-        print("GIF saved!")
-        plt.close(fig)
-
     for i, _ in enumerate(circles):
         circles[i].center = (px_arr[i], py_arr[i])
-    return circles + [info_text]
 
+    # Force full redraw and capture
+    fig.canvas.draw()
+    buf = np.frombuffer(fig.canvas.tostring_argb(), dtype=np.uint8)
+    buf = buf.reshape(fig.canvas.get_width_height()[::-1] + (4,))
+    buf = buf[:, :, 1:]  # drop alpha channel, convert ARGB → RGB
+    frames_for_gif.append(buf.copy())
+
+    if len(px_arr) == 0:
+        ani.event_source.stop()
+        save_results()
+        plt.close()
+
+    return circles + [info_text]
 start_time = time.time()
 draw_grid()
 
-animation = FuncAnimation(
+ani = animation.FuncAnimation(
     fig=fig,
     func=update,
     interval=1000 // fps,
-    blit=True,
+    blit=False,
     cache_frame_data=False
 )
 
-plt.get_current_fig_manager().window.lift()  # for TkAgg
+plt.get_current_fig_manager().window.lift()
 plt.show()
 
+print(f"Saving MP4 — {len(frames_for_gif)} frames...")
+import subprocess, tempfile, os
+from PIL import Image
+
+out_path = r"C:\Users\emili\Desktop\RUC\BP2\crowdproject\Test.mp4"
+
+# Save frames as temp PNG files
+tmpdir = tempfile.mkdtemp()
+for i, frame in enumerate(frames_for_gif):
+    img = Image.fromarray(frame)
+    img.save(os.path.join(tmpdir, f"frame_{i:05d}.png"))
+
+print(f"Frames written to {tmpdir}, running ffmpeg...")
+
+result = subprocess.run(
+    ['ffmpeg', '-y',
+     '-framerate', '60',
+     '-i', os.path.join(tmpdir, 'frame_%05d.png'),
+     '-vcodec', 'libx264',
+     '-pix_fmt', 'yuv420p',
+     out_path],
+    capture_output=True, text=True
+)
+
+print(result.stdout)
+print(result.stderr)
+
+# Clean up temp files
+for f in os.listdir(tmpdir):
+    os.remove(os.path.join(tmpdir, f))
+os.rmdir(tmpdir)
+
+print("MP4 saved!")
 #####################################################################################
 #                               POST-SIMULATION SUMMARY
 
