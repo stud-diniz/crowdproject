@@ -27,7 +27,7 @@ if not os.path.exists(banking):
     pd.DataFrame(columns=['sim_nr','wall_setup', 'elapsed_s', 'total_exited', 'avg_flow_ps', 'frames', 'avg_fps', 'particles', 'bollard_type']
                  ).to_csv(banking, index=False)
 
-BOLLARD = bollard_pos.void
+BOLLARD = bollard_pos.far
 ACTIVE_WALLS = inner_walls.wallie0
 
 # change here to switch layouts (codeword pizza for easy finding)
@@ -355,7 +355,7 @@ def recaller():
         return
    
     apply_goal_force(px_arr, py_arr, vx_arr, vy_arr)
-    if n >= 2:   
+    if n >= 2:
         neighbors=build_neighbor_list(px_arr,py_arr)
 
         repulse(px_arr,py_arr,vx_arr,vy_arr,neighbors)
@@ -475,7 +475,7 @@ def update(frame):
     buf = buf.reshape(fig.canvas.get_width_height()[::-1] + (4,))
     frames_for_gif.append(buf[:, :, :3].copy())
 
-    if len(px_arr) == 16:
+    if len(px_arr) == 150:
         animation.event_source.stop()
         save_results()
         os.makedirs('result_gifs', exist_ok=True)
