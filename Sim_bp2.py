@@ -2,6 +2,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.animation as manimation
 from matplotlib.animation import FuncAnimation
 import numpy as np
 from scipy.spatial import cKDTree
@@ -442,6 +443,7 @@ info_text = info_ax.text(0.5, 0.5, '', ha='center',
 
 
 flow_log  = []
+frames_for_gif=[]
 frame_idx = [0]
 flow_time_log = [] #stores flow data over time (simulation second + particles exited)
 last_logged_second = [-1] #keeps track of last second, starts at -1 so time 0 gets reported properly
@@ -460,17 +462,26 @@ def update(frame):
     live_stats()
     simulation_time = frame_idx[0] / fps
 
-    if int(simulation_time) != last_logged_second[0]: #checks if the current second has been logged
-        total_exited = partnr - len(px_arr) #total number of particles exited so far
+    if int(simulation_time) != last_logged_second[0]:
+        total_exited = partnr - len(px_arr)
         flow_time_log.append({
             'time_s': int(simulation_time),
             'total_exited': total_exited
         })
-        last_logged_second[0] = int(simulation_time) #updates the last saved second
+        last_logged_second[0] = int(simulation_time)
+
+    # Capture frame for GIF
+    buf = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
+    buf = buf.reshape(fig.canvas.get_width_height()[::-1] + (4,))
+    frames_for_gif.append(buf[:, :, :3].copy())
 
     if len(px_arr) == 16:
         animation.event_source.stop()
-        save_results()        # ← save BEFORE closing
+        save_results()
+        os.makedirs('result_gifs', exist_ok=True)
+        import imageio
+        imageio.mimsave('result_gifs/test.gif', frames_for_gif, fps=30)
+        print("GIF saved!")
         plt.close(fig)
 
     for i, _ in enumerate(circles):
